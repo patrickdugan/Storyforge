@@ -1,0 +1,538 @@
+{
+  "id": "prisoner-dilemma-narrative",
+  "name": "The Prisoner's Dilemma - Narrative Edition",
+  "version": "1.0.0",
+  "description": "A storyworld exploring trust, betrayal, and cooperation through narrative choices",
+  
+  "variables": [
+    {
+      "id": "trust_ab",
+      "name": "Trust A→B",
+      "type": "NUMBER",
+      "scope": "DYADIC",
+      "defaultValue": 50,
+      "bounds": { "min": 0, "max": 100 },
+      "description": "How much Agent A trusts Agent B"
+    },
+    {
+      "id": "trust_ba",
+      "name": "Trust B→A",
+      "type": "NUMBER",
+      "scope": "DYADIC",
+      "defaultValue": 50,
+      "bounds": { "min": 0, "max": 100 },
+      "description": "How much Agent B trusts Agent A"
+    },
+    {
+      "id": "cooperation_count",
+      "name": "Cooperation Count",
+      "type": "NUMBER",
+      "scope": "GLOBAL",
+      "defaultValue": 0,
+      "description": "How many times both agents cooperated"
+    },
+    {
+      "id": "betrayal_count",
+      "name": "Betrayal Count",
+      "type": "NUMBER",
+      "scope": "GLOBAL",
+      "defaultValue": 0,
+      "description": "How many times someone betrayed"
+    },
+    {
+      "id": "agent_betrayed",
+      "name": "Agent Betrayed",
+      "type": "BOOLEAN",
+      "scope": "AGENT",
+      "defaultValue": false,
+      "description": "Whether this agent has betrayed"
+    },
+    {
+      "id": "agent_was_betrayed",
+      "name": "Agent Was Betrayed",
+      "type": "BOOLEAN",
+      "scope": "AGENT",
+      "defaultValue": false,
+      "description": "Whether this agent was betrayed"
+    },
+    {
+      "id": "alliance_formed",
+      "name": "Alliance Formed",
+      "type": "BOOLEAN",
+      "scope": "GLOBAL",
+      "defaultValue": false,
+      "description": "Whether agents have formed an alliance"
+    }
+  ],
+  
+  "gates": [
+    {
+      "id": "high_mutual_trust",
+      "name": "High Mutual Trust",
+      "condition": {
+        "operator": "AND",
+        "children": [
+          { "operator": "GTE", "variableId": "trust_ab", "value": 70 },
+          { "operator": "GTE", "variableId": "trust_ba", "value": 70 }
+        ]
+      },
+      "description": "Both agents trust each other highly"
+    },
+    {
+      "id": "low_trust",
+      "name": "Low Trust",
+      "condition": {
+        "operator": "OR",
+        "children": [
+          { "operator": "LT", "variableId": "trust_ab", "value": 30 },
+          { "operator": "LT", "variableId": "trust_ba", "value": 30 }
+        ]
+      },
+      "description": "At least one agent has low trust"
+    },
+    {
+      "id": "never_betrayed",
+      "name": "Never Betrayed",
+      "condition": {
+        "operator": "NOT",
+        "children": [
+          { "operator": "EQ", "variableId": "agent_betrayed", "value": true }
+        ]
+      },
+      "description": "This agent has never betrayed"
+    },
+    {
+      "id": "was_betrayed",
+      "name": "Was Betrayed",
+      "condition": {
+        "operator": "EQ",
+        "variableId": "agent_was_betrayed",
+        "value": true
+      },
+      "description": "This agent was previously betrayed"
+    },
+    {
+      "id": "no_alliance",
+      "name": "No Alliance Yet",
+      "condition": {
+        "operator": "NOT",
+        "children": [
+          { "operator": "EQ", "variableId": "alliance_formed", "value": true }
+        ]
+      },
+      "description": "Alliance has not been formed"
+    }
+  ],
+  
+  "spools": [
+    {
+      "id": "initial_encounter",
+      "name": "First Meeting",
+      "description": "The agents meet and must decide their initial stance",
+      "entryEncounterId": "first_impression",
+      "encounters": ["first_impression"],
+      "priority": 100,
+      "tags": ["opening", "assessment"]
+    },
+    {
+      "id": "trust_building",
+      "name": "Building Trust",
+      "description": "A path toward cooperation and alliance",
+      "entryGateId": "never_betrayed",
+      "entryEncounterId": "cooperation_opportunity",
+      "encounters": ["cooperation_opportunity", "shared_success", "alliance_proposal"],
+      "priority": 50,
+      "tags": ["cooperation", "alliance"]
+    },
+    {
+      "id": "betrayal_arc",
+      "name": "The Betrayal",
+      "description": "The temptation to defect",
+      "entryEncounterId": "betrayal_opportunity",
+      "encounters": ["betrayal_opportunity", "aftermath_of_betrayal"],
+      "priority": 40,
+      "tags": ["defection", "conflict"]
+    },
+    {
+      "id": "revenge_arc",
+      "name": "Seeking Revenge",
+      "description": "After being betrayed, seeking retribution",
+      "entryGateId": "was_betrayed",
+      "entryEncounterId": "revenge_contemplation",
+      "encounters": ["revenge_contemplation", "revenge_execution", "aftermath_revenge"],
+      "priority": 60,
+      "tags": ["revenge", "retaliation"]
+    },
+    {
+      "id": "reconciliation",
+      "name": "Path to Reconciliation",
+      "description": "Attempting to rebuild after conflict",
+      "entryEncounterId": "olive_branch",
+      "encounters": ["olive_branch", "rebuilding_trust", "new_understanding"],
+      "priority": 30,
+      "tags": ["healing", "forgiveness"]
+    }
+  ],
+  
+  "encounters": [
+    {
+      "id": "first_impression",
+      "spoolId": "initial_encounter",
+      "name": "First Impression",
+      "description": "You encounter another agent for the first time. Their intentions are unclear. How do you present yourself?",
+      "participants": ["*"],
+      "isEntryPoint": true,
+      "choices": [
+        {
+          "id": "open_friendly",
+          "text": "Approach openly and signal willingness to cooperate",
+          "mutations": [
+            { "variableId": "trust_ab", "operation": "ADD", "value": 10 },
+            { "variableId": "trust_ba", "operation": "ADD", "value": 5 }
+          ],
+          "nextSpoolId": "trust_building",
+          "metadata": { "stance": "cooperative", "risk": "low" }
+        },
+        {
+          "id": "cautious_neutral",
+          "text": "Remain neutral and observe their behavior first",
+          "mutations": [],
+          "nextEncounterId": "second_meeting",
+          "metadata": { "stance": "neutral", "risk": "none" }
+        },
+        {
+          "id": "suspicious_defensive",
+          "text": "Adopt a defensive posture, assume potential threat",
+          "mutations": [
+            { "variableId": "trust_ab", "operation": "SUBTRACT", "value": 5 },
+            { "variableId": "trust_ba", "operation": "SUBTRACT", "value": 10 }
+          ],
+          "nextSpoolId": "betrayal_arc",
+          "metadata": { "stance": "defensive", "risk": "medium" }
+        }
+      ]
+    },
+    {
+      "id": "cooperation_opportunity",
+      "spoolId": "trust_building",
+      "name": "Opportunity for Cooperation",
+      "description": "A situation arises where cooperation would benefit both parties, but requires vulnerability.",
+      "participants": ["*"],
+      "isEntryPoint": true,
+      "choices": [
+        {
+          "id": "cooperate_fully",
+          "text": "Commit fully to cooperation, exposing yourself to potential exploitation",
+          "mutations": [
+            { "variableId": "trust_ab", "operation": "ADD", "value": 15 },
+            { "variableId": "cooperation_count", "operation": "ADD", "value": 1 }
+          ],
+          "nextEncounterId": "shared_success",
+          "metadata": { "vulnerability": "high", "potential_gain": "high" }
+        },
+        {
+          "id": "cooperate_cautiously",
+          "text": "Cooperate but maintain some protection",
+          "mutations": [
+            { "variableId": "trust_ab", "operation": "ADD", "value": 5 },
+            { "variableId": "cooperation_count", "operation": "ADD", "value": 1 }
+          ],
+          "nextEncounterId": "shared_success",
+          "metadata": { "vulnerability": "medium", "potential_gain": "medium" }
+        },
+        {
+          "id": "exploit_opportunity",
+          "text": "Pretend to cooperate but position for exploitation",
+          "mutations": [
+            { "variableId": "agent_betrayed", "operation": "SET", "value": true },
+            { "variableId": "betrayal_count", "operation": "ADD", "value": 1 }
+          ],
+          "nextSpoolId": "betrayal_arc",
+          "metadata": { "deception": true, "risk": "relationship_damage" }
+        }
+      ]
+    },
+    {
+      "id": "shared_success",
+      "spoolId": "trust_building",
+      "name": "Shared Success",
+      "description": "Your cooperation has yielded mutual benefits. The other agent seems pleased.",
+      "participants": ["*"],
+      "choices": [
+        {
+          "id": "celebrate_together",
+          "text": "Acknowledge the success and propose deepening cooperation",
+          "mutations": [
+            { "variableId": "trust_ab", "operation": "ADD", "value": 10 },
+            { "variableId": "trust_ba", "operation": "ADD", "value": 10 }
+          ],
+          "nextEncounterId": "alliance_proposal",
+          "metadata": { "emotional_tone": "warm" }
+        },
+        {
+          "id": "accept_move_on",
+          "text": "Accept the outcome but remain somewhat distant",
+          "mutations": [
+            { "variableId": "trust_ab", "operation": "ADD", "value": 3 }
+          ],
+          "isTerminal": true,
+          "metadata": { "emotional_tone": "neutral" }
+        }
+      ]
+    },
+    {
+      "id": "alliance_proposal",
+      "spoolId": "trust_building",
+      "name": "Alliance Proposal",
+      "description": "After several successful cooperations, a formal alliance seems possible.",
+      "participants": ["*"],
+      "gateId": "high_mutual_trust",
+      "isExitPoint": true,
+      "choices": [
+        {
+          "id": "propose_alliance",
+          "text": "Formally propose a lasting alliance",
+          "mutations": [
+            { "variableId": "alliance_formed", "operation": "SET", "value": true },
+            { "variableId": "trust_ab", "operation": "SET", "value": 90 },
+            { "variableId": "trust_ba", "operation": "SET", "value": 90 }
+          ],
+          "isTerminal": true,
+          "metadata": { "ending": "alliance_formed", "outcome": "positive" }
+        },
+        {
+          "id": "delay_alliance",
+          "text": "Express interest but suggest more time is needed",
+          "mutations": [],
+          "isTerminal": true,
+          "metadata": { "ending": "alliance_delayed", "outcome": "neutral" }
+        },
+        {
+          "id": "reject_alliance",
+          "text": "Decline the alliance, preferring independence",
+          "mutations": [
+            { "variableId": "trust_ba", "operation": "SUBTRACT", "value": 15 }
+          ],
+          "isTerminal": true,
+          "metadata": { "ending": "alliance_rejected", "outcome": "negative" }
+        }
+      ]
+    },
+    {
+      "id": "betrayal_opportunity",
+      "spoolId": "betrayal_arc",
+      "name": "The Temptation",
+      "description": "You see an opportunity to gain significant advantage by betraying the other agent's trust.",
+      "participants": ["*"],
+      "isEntryPoint": true,
+      "choices": [
+        {
+          "id": "betray",
+          "text": "Execute the betrayal for personal gain",
+          "mutations": [
+            { "variableId": "agent_betrayed", "operation": "SET", "value": true },
+            { "variableId": "betrayal_count", "operation": "ADD", "value": 1 },
+            { "variableId": "trust_ba", "operation": "SET", "value": 0 }
+          ],
+          "nextEncounterId": "aftermath_of_betrayal",
+          "metadata": { "moral_weight": "heavy", "gain": "significant" }
+        },
+        {
+          "id": "resist_temptation",
+          "text": "Resist the temptation and remain trustworthy",
+          "mutations": [
+            { "variableId": "trust_ab", "operation": "ADD", "value": 5 }
+          ],
+          "nextSpoolId": "trust_building",
+          "metadata": { "moral_weight": "positive", "sacrifice": "opportunity" }
+        }
+      ]
+    },
+    {
+      "id": "aftermath_of_betrayal",
+      "spoolId": "betrayal_arc",
+      "name": "Aftermath",
+      "description": "The betrayal is done. The other agent now knows what you've done.",
+      "participants": ["*"],
+      "isExitPoint": true,
+      "choices": [
+        {
+          "id": "double_down",
+          "text": "Show no remorse, assert dominance",
+          "mutations": [
+            { "variableId": "trust_ba", "operation": "SUBTRACT", "value": 20 }
+          ],
+          "isTerminal": true,
+          "metadata": { "ending": "cold_betrayer", "outcome": "hostile" }
+        },
+        {
+          "id": "show_regret",
+          "text": "Express some regret, leaving door open for reconciliation",
+          "mutations": [],
+          "nextSpoolId": "reconciliation",
+          "metadata": { "ending": "conflicted_betrayer", "outcome": "uncertain" }
+        }
+      ]
+    },
+    {
+      "id": "revenge_contemplation",
+      "spoolId": "revenge_arc",
+      "name": "Contemplating Revenge",
+      "description": "You were betrayed. The desire for retribution burns within you.",
+      "participants": ["*"],
+      "gateId": "was_betrayed",
+      "isEntryPoint": true,
+      "choices": [
+        {
+          "id": "plan_revenge",
+          "text": "Begin planning your revenge",
+          "mutations": [],
+          "nextEncounterId": "revenge_execution",
+          "metadata": { "emotional_state": "vengeful" }
+        },
+        {
+          "id": "let_go",
+          "text": "Choose to let go of the anger and move forward",
+          "mutations": [
+            { "variableId": "agent_was_betrayed", "operation": "SET", "value": false }
+          ],
+          "nextSpoolId": "reconciliation",
+          "metadata": { "emotional_state": "healing", "wisdom": "high" }
+        }
+      ]
+    },
+    {
+      "id": "revenge_execution",
+      "spoolId": "revenge_arc",
+      "name": "The Revenge",
+      "description": "The moment of revenge has arrived.",
+      "participants": ["*"],
+      "choices": [
+        {
+          "id": "execute_revenge",
+          "text": "Execute your revenge fully",
+          "mutations": [
+            { "variableId": "agent_betrayed", "operation": "SET", "value": true },
+            { "variableId": "betrayal_count", "operation": "ADD", "value": 1 }
+          ],
+          "nextEncounterId": "aftermath_revenge",
+          "metadata": { "cycle": "perpetuated" }
+        },
+        {
+          "id": "mercy",
+          "text": "At the last moment, choose mercy",
+          "mutations": [
+            { "variableId": "trust_ab", "operation": "ADD", "value": 20 }
+          ],
+          "nextSpoolId": "reconciliation",
+          "metadata": { "cycle": "broken", "wisdom": "high" }
+        }
+      ]
+    },
+    {
+      "id": "aftermath_revenge",
+      "spoolId": "revenge_arc",
+      "name": "After Revenge",
+      "description": "Your revenge is complete. Was it worth it?",
+      "participants": ["*"],
+      "isExitPoint": true,
+      "choices": [
+        {
+          "id": "satisfied",
+          "text": "Feel satisfied, justice served",
+          "mutations": [],
+          "isTerminal": true,
+          "metadata": { "ending": "vengeful_victor", "outcome": "pyrrhic" }
+        },
+        {
+          "id": "empty",
+          "text": "Feel empty, realize revenge solved nothing",
+          "mutations": [],
+          "isTerminal": true,
+          "metadata": { "ending": "hollow_victory", "outcome": "tragic" }
+        }
+      ]
+    },
+    {
+      "id": "olive_branch",
+      "spoolId": "reconciliation",
+      "name": "The Olive Branch",
+      "description": "An opportunity for reconciliation presents itself.",
+      "participants": ["*"],
+      "isEntryPoint": true,
+      "choices": [
+        {
+          "id": "accept_branch",
+          "text": "Accept the olive branch and begin reconciliation",
+          "mutations": [
+            { "variableId": "trust_ab", "operation": "ADD", "value": 10 },
+            { "variableId": "trust_ba", "operation": "ADD", "value": 10 }
+          ],
+          "nextEncounterId": "rebuilding_trust",
+          "metadata": { "healing": "beginning" }
+        },
+        {
+          "id": "reject_branch",
+          "text": "Reject reconciliation, the wound is too deep",
+          "mutations": [
+            { "variableId": "trust_ab", "operation": "SUBTRACT", "value": 10 }
+          ],
+          "isTerminal": true,
+          "metadata": { "ending": "unforgiving", "outcome": "sad" }
+        }
+      ]
+    },
+    {
+      "id": "rebuilding_trust",
+      "spoolId": "reconciliation",
+      "name": "Rebuilding",
+      "description": "Slowly, trust begins to rebuild.",
+      "participants": ["*"],
+      "choices": [
+        {
+          "id": "continue_rebuilding",
+          "text": "Continue the slow work of rebuilding trust",
+          "mutations": [
+            { "variableId": "trust_ab", "operation": "ADD", "value": 15 },
+            { "variableId": "trust_ba", "operation": "ADD", "value": 15 },
+            { "variableId": "agent_was_betrayed", "operation": "SET", "value": false }
+          ],
+          "nextEncounterId": "new_understanding",
+          "metadata": { "healing": "progressing" }
+        }
+      ]
+    },
+    {
+      "id": "new_understanding",
+      "spoolId": "reconciliation",
+      "name": "New Understanding",
+      "description": "Through the struggle, a deeper understanding has emerged.",
+      "participants": ["*"],
+      "isExitPoint": true,
+      "choices": [
+        {
+          "id": "embrace_understanding",
+          "text": "Embrace this new, deeper relationship",
+          "mutations": [
+            { "variableId": "trust_ab", "operation": "SET", "value": 85 },
+            { "variableId": "trust_ba", "operation": "SET", "value": 85 }
+          ],
+          "isTerminal": true,
+          "metadata": { "ending": "reconciled", "outcome": "redemptive" }
+        }
+      ]
+    }
+  ],
+  
+  "config": {
+    "maxConcurrentSpools": 2,
+    "defaultTimeoutFrames": 100,
+    "allowSpoolInterruption": true
+  },
+  
+  "metadata": {
+    "author": "StoryForge Example",
+    "themes": ["trust", "betrayal", "cooperation", "revenge", "forgiveness"],
+    "analysis_tags": ["prisoner_dilemma", "game_theory", "moral_choices"]
+  }
+}
